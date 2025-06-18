@@ -1,0 +1,29 @@
+{
+  "name": "chatbot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@prisma/client": "^6.9.0",
+    "date-fns": "^4.1.0",
+    "next": "^15.3.3",
+    "openai": "^5.5.0",
+    "prisma": "^6.9.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.3",
+    "@types/react": "^19.1.8"
+  }
+}

@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# AI Models (גדולים מדי!)
+*.safetensors
+*.bin
+*.onnx
+mt5-hebrew-sql-model/
+sql-chatbot-model/
+fine-tuned-chatbot/
+*/models/*
+
+# Next.js build files
+.next/
+out/
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp

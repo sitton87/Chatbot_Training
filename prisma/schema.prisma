@@ -1,0 +1,359 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// טבלת משתמשים
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  googleId      String?   @unique @map("google_id")
+  isAuthorized  Boolean   @default(true) @map("is_authorized")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  lastActive    DateTime  @default(now()) @map("last_active")
+
+  // יחסים עם NextAuth
+  accounts Account[]
+  sessions Session[]
+
+  // יחסים קיימים
+  uploadedSupplierFiles SupplierFile[]
+  uploadedOrderFiles    OrderFile[]
+  statusChanges         OrderStatusHistory[]
+  auditLogs            AuditLog[]
+  systemSettings       SystemSetting[] 
+
+  @@map("users")
+}
+
+// הוסף את הטבלאות החדשות של NextAuth:
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text  
+  access_token      String? @db.Text  
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text  
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+
+// טבלת קטגוריות מוצרים
+model ProductCategory {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // יחסים
+  supplierCategories SupplierCategory[]
+  orderCategories    OrderCategory[]
+
+  @@map("product_categories")
+}
+
+// טבלת עמילויות מכס
+model CustomsCompany {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  phone     String
+  email     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // יחסים
+  agents CustomsAgent[]
+  orders Order[]
+
+  @@map("customs_companies")
+}
+
+// טבלת עמילי מכס
+model CustomsAgent {
+  id               String   @id @default(uuid())
+  customsCompanyId String   @map("customs_company_id")
+  name             String
+  phone            String
+  position         String
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // יחסים
+  customsCompany CustomsCompany @relation(fields: [customsCompanyId], references: [id])
+  orders         Order[]
+
+  @@map("customs_agents")
+}
+
+// טבלת ספקים
+model Supplier {
+  id                   String   @id @default(uuid())
+  name                 String
+  country              String
+  city                 String
+  address              String?
+  phone                String?
+  email                String?
+  contactPerson        String?  @map("contact_person")
+  contactPhone         String?  @map("contact_phone")
+  contactPosition      String?  @map("contact_position")
+  productionTimeWeeks  Int      @map("production_time_weeks")
+  shippingTimeWeeks    Int      @map("shipping_time_weeks")
+  paymentTerms         String?  @map("payment_terms")
+  hasAdvancePayment    Boolean  @default(false) @map("has_advance_payment")
+  advancePercentage    Int?     @map("advance_percentage")
+  currency             String   @default("USD")
+  importLicense        String?  @map("import_license")
+  licenseExpiry        DateTime? @map("license_expiry")
+  feedLicense          String?  @map("feed_license")
+  feedLicenseExpiry    DateTime? @map("feed_license_expiry")
+  bankName             String?  @map("bank_name")
+  beneficiary          String?
+  iban                 String?
+  bic                  String?
+  connection           String?  @map("connection")
+  isActive             Boolean  @default(true) 
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  
+
+  // יחסים
+  orders             Order[]
+  supplierCategories SupplierCategory[]
+  files              SupplierFile[]
+
+  @@map("suppliers")
+}
+
+// טבלת קטגוריות לפי ספק
+model SupplierCategory {
+  id         String   @id @default(uuid())
+  supplierId String   @map("supplier_id")
+  categoryId String   @map("category_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // יחסים
+  supplier Supplier        @relation(fields: [supplierId], references: [id])
+  category ProductCategory @relation(fields: [categoryId], references: [id])
+
+  @@unique([supplierId, categoryId])
+  @@map("supplier_categories")
+}
+
+// טבלת הזמנות
+model Order {
+  id                   String    @id @default(uuid())
+  orderNumber          String    @unique @map("order_number")
+  supplierId           String    @map("supplier_id")
+  etaFinal             DateTime  @map("eta_final")
+  status               String    @default("בתהליך הזמנה")
+  totalAmount          Decimal   @map("total_amount")
+  advanceAmount        Decimal?  @map("advance_amount")
+  finalPaymentAmount   Decimal?  @map("final_payment_amount")
+  originalCurrency     String?   @map("original_currency")
+  exchangeRate         Decimal?  @map("exchange_rate")
+  containerNumber      String?   @map("container_number")
+  customsCompanyId     String?   @map("customs_company_id")
+  customsAgentId       String?   @map("customs_agent_id")
+  notes                String?
+  portReleaseCost      Decimal?  @map("port_release_cost")
+  calculatedEta        DateTime? @map("calculated_eta")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  // יחסים
+  supplier        Supplier             @relation(fields: [supplierId], references: [id])
+  customsCompany  CustomsCompany?      @relation(fields: [customsCompanyId], references: [id])
+  customsAgent    CustomsAgent?        @relation(fields: [customsAgentId], references: [id])
+  files           OrderFile[]
+  statusHistory   OrderStatusHistory[]
+  phases          OrderPhase[]
+  orderCategories OrderCategory[]
+
+  @@map("orders")
+}
+
+// טבלת קטגוריות בהזמנה
+model OrderCategory {
+  id         String   @id @default(uuid())
+  orderId    String   @map("order_id")
+  categoryId String   @map("category_id")
+  quantity   Int?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // יחסים
+  order    Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  category ProductCategory @relation(fields: [categoryId], references: [id])
+
+  @@unique([orderId, categoryId])
+  @@map("order_categories")
+}
+
+// טבלת תבניות שלבים קבועים
+model OrderStageTemplate {
+  id                String   @id @default(uuid())
+  name              String   // "הכנת הזמנה", "שליחת הזמנה לספק"...
+  durationDays      Int      @map("duration_days") // כמה ימים (קבוע)
+  order             Int      // סדר השלב (1, 2, 3...)
+  isConditional     Boolean  @default(false) @map("is_conditional") // האם תלוי בתנאי
+  condition         String?  // "hasAdvancePayment" או null
+  isDynamic         Boolean  @default(false) @map("is_dynamic") // האם משתנה לפי ספק
+  calculationMethod String?  @map("calculation_method") // "productionTimeWeeks * 7"
+  isActive          Boolean  @default(true) @map("is_active") // האם השלב פעיל
+  description       String?  // הסבר על השלב
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([order])
+  @@map("order_stage_templates")
+}
+
+// טבלת שלבי הזמנה (הטבלה הקיימת - מעודכנת)
+model OrderPhase {
+  id           String    @id @default(uuid())
+  orderId      String    @map("order_id")
+  phaseName    String    @map("phase_name")
+  startDate    DateTime? @map("start_date")
+  endDate      DateTime? @map("end_date")
+  durationDays Int       @map("duration_days")
+  isActive     Boolean   @default(true) @map("is_active")
+  phaseOrder   Int       @map("phase_order")
+  templateId   String?   @map("template_id") // קישור לתבנית (אופציונלי)
+
+  // יחסים
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_phases")
+}
+
+// טבלת קבצים מצורפים לספקים
+model SupplierFile {
+  id              String   @id @default(uuid())
+  supplierId      String   @map("supplier_id")
+  fileName        String   @map("file_name")
+  fileDescription String?  @map("file_description")
+  filePath        String   @map("file_path")
+  fileSize        Int      @map("file_size")
+  fileType        String   @map("file_type")
+  uploadedAt      DateTime @default(now()) @map("uploaded_at")
+  uploadedBy      String   @map("uploaded_by")
+
+  // יחסים
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  uploader User     @relation(fields: [uploadedBy], references: [id])
+
+  @@map("supplier_files")
+}
+
+// טבלת קבצים מצורפים להזמנות
+model OrderFile {
+  id         String   @id @default(uuid())
+  orderId    String   @map("order_id")
+  fileName   String   @map("file_name")
+  filePath   String   @map("file_path")
+  fileSize   Int      @map("file_size")
+  fileType   String   @default("application/octet-stream") @map("file_type")  // הוסף default!
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+  uploadedBy String   @map("uploaded_by")
+
+  order    Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  uploader User  @relation(fields: [uploadedBy], references: [id])
+
+  @@map("order_files")
+}
+
+// טבלת היסטוריית שינויי סטטוס
+model OrderStatusHistory {
+  id        String   @id @default(uuid())
+  orderId   String   @map("order_id")
+  oldStatus String?  @map("old_status")
+  newStatus String   @map("new_status")
+  changedAt DateTime @default(now()) @map("changed_at")
+  changedBy String   @map("changed_by")
+  notes     String?
+
+  // יחסים
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changer User  @relation(fields: [changedBy], references: [id])
+
+  @@map("order_status_history")
+}
+
+// טבלת תיעוד שינויים
+model AuditLog {
+  id        String   @id @default(uuid())
+  tableName String   @map("table_name")
+  recordId  String   @map("record_id")
+  fieldName String   @map("field_name")
+  oldvalue       String?  @map("old_value")
+  newvalue       String      @map("new_value")
+  changedAt DateTime @default(now()) @map("changed_at")
+  changedBy String   @map("changed_by")
+
+  // יחסים
+  changer User @relation(fields: [changedBy], references: [id])
+
+  @@map("audit_log")
+}
+
+// טבלת הגדרות מערכת
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique // "order_statuses", "currencies", "default_currency"
+  value       String      // JSON string או plain text
+  type        String   // "json", "text", "number", "boolean"
+  category    String   // "general", "financial", "orders", "notifications"
+  description String?  // תיאור להגדרה
+  isEditable  Boolean  @default(true) // האם ניתן לעריכה
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedBy   String?  @map("updated_by") // מי עדכן
+
+  // יחס למשתמש שעדכן (אופציונלי)
+  updater User? @relation(fields: [updatedBy], references: [id])
+
+  @@map("system_settings")
+}
