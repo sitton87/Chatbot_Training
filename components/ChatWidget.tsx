@@ -13,7 +13,8 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState<Message[]>([
     {
       type: "bot",
-      content: "שלום! אני כאן לעזור לך עם שאלות על ספקים, הזמנות ורישיונות. 👋",
+      content:
+        "שלום! אני לולי ואני כאן לעזור לך עם שאלות על ספקים, הזמנות ורישיונות. 🐕",
       timestamp: new Date(),
     },
   ]);
@@ -41,7 +42,7 @@ export default function ChatWidget() {
           hour: "2-digit",
           minute: "2-digit",
         });
-        const speaker = msg.type === "user" ? "👤 אני" : "🤖 עוזר AI";
+        const speaker = msg.type === "user" ? "👤 אני" : "🐕 לולי";
         return `[${time}] ${speaker}: ${msg.content}`;
       })
       .join("\n\n");
@@ -68,9 +69,15 @@ export default function ChatWidget() {
 
   // טיפול בגובה דינמי של textarea
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement) => {
-    textarea.style.height = "20px";
-    const scrollHeight = Math.min(textarea.scrollHeight, 120);
-    textarea.style.height = scrollHeight + "px";
+    // ספירת שורות בפועל
+    const lines = textarea.value.split("\n").length;
+
+    if (lines === 1) {
+      textarea.style.height = "36px"; // שורה אחת
+    } else {
+      const newHeight = Math.min(lines * 24 + 12, 120); // 24px לשורה + padding
+      textarea.style.height = newHeight + "px";
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -96,7 +103,7 @@ export default function ChatWidget() {
     setTimeout(() => {
       if (textareaRef.current) {
         textareaRef.current.focus();
-        textareaRef.current.style.height = "20px"; // איפוס גובה
+        adjustTextareaHeight(textareaRef.current); // איפוס גובה עם הפונקציה
       }
     }, 50);
 
@@ -155,7 +162,7 @@ export default function ChatWidget() {
       {
         type: "bot",
         content:
-          "שלום! אני כאן לעזור לך עם שאלות על ספקים, הזמנות ורישיונות. 👋",
+          "שלום! אני לולי ואני כאן לעזור לך עם שאלות על ספקים, הזמנות כספים ורישיונות. 🐕",
         timestamp: new Date(),
       },
     ]);
@@ -274,7 +281,7 @@ export default function ChatWidget() {
               fontWeight: "600",
             }}
           >
-            <span>עוזר AI ({messages.length - 1} שאלות)</span>
+            <span>לולי - העוזרת החכמה שלך ({messages.length - 1} שאלות)</span>
             <div style={{ display: "flex", gap: "8px" }}>
               {/* 🎯 כפתור העתקה */}
               <button
@@ -358,15 +365,19 @@ export default function ChatWidget() {
                       width: "32px",
                       height: "32px",
                       borderRadius: "50%",
-                      background: "#007bff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "16px",
                       flexShrink: 0,
+                      overflow: "hidden",
                     }}
                   >
-                    🤖
+                    <img
+                      src="/images/loli_New.jpg"
+                      alt="לולי"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
                   </div>
                 )}
 
@@ -445,14 +456,19 @@ export default function ChatWidget() {
                     width: "32px",
                     height: "32px",
                     borderRadius: "50%",
-                    background: "#007bff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "16px",
+                    flexShrink: 0,
+                    overflow: "hidden",
                   }}
                 >
-                  🤖
+                  <img
+                    src="/images/loli_New.jpg"
+                    alt="לולי"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                    }}
+                  />
                 </div>
                 <div
                   style={{
