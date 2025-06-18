@@ -14,7 +14,7 @@ export default function ChatWidget() {
     {
       type: "bot",
       content:
-        "שלום! אני לולי ואני כאן לעזור לך עם שאלות על ספקים, הזמנות ורישיונות. 🐕",
+        "שלום! אני לולי ואני כאן לעזור לך עם שאלות על ספקים, הזמנות, כספים ורישיונות. 🐕",
       timestamp: new Date(),
     },
   ]);
@@ -162,7 +162,7 @@ export default function ChatWidget() {
       {
         type: "bot",
         content:
-          "שלום! אני לולי ואני כאן לעזור לך עם שאלות על ספקים, הזמנות כספים ורישיונות. 🐕",
+          "שלום! אני לולי ואני כאן לעזור לך עם שאלות על ספקים, הזמנות, כספים ורישיונות. 🐕",
         timestamp: new Date(),
       },
     ]);
